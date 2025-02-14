@@ -10,8 +10,51 @@ export class TaskDeleteMod extends Modifier {
     this.observerCallback = this.add;
   }
 
+  checkIsTaskInDom() {
+    return Boolean(
+      document.querySelector(
+        ".el-dialog__wrapper:has(.task-wrapper):has(.task--name):has(.task--tasked>a)"
+      )
+    );
+  }
+
+  checkIsTaskOpened() {
+    const dialogWrapper: HTMLElement | null = document.querySelector(
+      ".el-dialog__wrapper:has(.task-wrapper):has(.task--name):has(.task--tasked>a)"
+    );
+    return dialogWrapper?.style.display !== "none";
+  }
+
+  checkIsButtonAdded() {
+    return false;
+  }
+
+  getTaskName() {
+    const el = document
+      .querySelector(
+        ".el-dialog__wrapper:has(.task-wrapper):has(.task--name):has(.task--tasked>a)"
+      )
+      ?.querySelector(".task--name");
+    return el?.textContent?.trim();
+  }
+
+  getPipelineName() {
+    const el = document
+      .querySelector(
+        ".el-dialog__wrapper:has(.task-wrapper):has(.task--name):has(.task--tasked>a)"
+      )
+      ?.querySelector(".task--tasked>a");
+    return el?.textContent?.trim();
+  }
+
   add() {
+    if (!this.checkIsTaskInDom()) return;
+    if (!this.checkIsTaskOpened()) return;
+    if (this.checkIsButtonAdded()) return;
+
     console.log("Do JOB!");
+    console.log(this.getTaskName());
+    console.log(this.getPipelineName());
   }
 }
 
