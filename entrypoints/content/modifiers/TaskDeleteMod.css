@@ -1,0 +1,19 @@
+.TaskDeleteMod_Button,
+.TaskDeleteMod_Button:focus,
+.TaskDeleteMod_Button:active {
+  border: 0;
+  outline-width: 0;
+  outline: none;
+  line-height: 30px;
+  padding: 0 15px;
+  margin-left: 15px;
+  cursor: pointer;
+  color: #fff;
+  background-color: #a6a6a6;
+  border-color: #a6a6a6;
+  font-size: 12px;
+  border-radius: 3px;
+  display: inline-block;
+  white-space: nowrap;
+  height: 100%;
+}
