@@ -1,27 +1,37 @@
 export class Api {
   static baseUrl = "https://pravovaporada.api.keycrm.app";
 
-  static getTasksUri = () => {
-    return `/tasks/search?query=ddddddddddddd&filters%5Btasks%5D=all&filters%5Btab%5D=search&page=1&per_page=15`;
-  };
+  static getTaskNumberFromUrl(url: string) {
+    const found = url.match(/\/tasks\/(?<taskNumber>\d+)$/);
+    if (!found?.groups?.taskNumber)
+      return { error: new Error(`Unable to match task number in url: ${url}`) };
+    return { result: Number(found?.groups?.taskNumber) };
+  }
+
+  static getTaskUrl(taskNumber: number) {
+    return this.baseUrl + `/tasks/${taskNumber}`;
+  }
 
   static getToken() {
     return window.localStorage.authToken;
   }
 
-  static async fetch(uri: string, method = undefined, body = undefined) {
+  static async fetch(uri: string, method?: string, body?: string) {
     const options = {
       headers: {
-        Accept: "application/json",
-        Authorization: `Bearer ${this.getToken()}`,
+        accept: "application/json, text/plain, */*",
+        authorization: `Bearer ${this.getToken()}`,
+        userlocale: "en",
       } as HeadersInit,
       method: method,
       body: body,
     };
 
+    const url = uri.indexOf("https") === 0 ? uri : this.baseUrl + uri;
+
     let res: Response;
     try {
-      res = await fetch(this.baseUrl + uri, options);
+      res = await fetch(url, options);
     } catch (error: any) {
       return { error };
     }
@@ -29,21 +39,24 @@ export class Api {
     const status = res.status;
     const text = await res.text();
 
-    if (!res.headers.get("content-type")?.includes("application/json")) {
-      return { error: new Error("Not json type") };
-    }
+    const isJsonType = Boolean(
+      res.headers.get("content-type")?.includes("application/json")
+    );
 
     let json;
-    try {
-      json = JSON.parse(text);
-    } catch (error: any) {
-      return { error };
-    }
-
-    if (res.ok) {
-      return { status, json, text };
+    if (isJsonType) {
+      try {
+        json = JSON.parse(text);
+        return { status, json, text };
+      } catch (error: any) {
+        return { error };
+      }
     } else {
-      return { error: new Error("Not successful request") };
+      if (res.ok) {
+        return { status, text };
+      } else {
+        return { error: new Error("Not successful request") };
+      }
     }
   }
 
