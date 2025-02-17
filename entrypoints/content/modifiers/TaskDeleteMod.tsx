@@ -1,6 +1,8 @@
 import { useState } from "react";
 import ReactDOM from "react-dom/client";
 
+import { Api } from "../utils/Api";
+import { sleep } from "../utils/sleep";
 import { Modifier } from "./Modifier";
 
 import "./TaskDeleteMod.css";
@@ -14,7 +16,7 @@ function Component({ parent }: { parent: any }) {
         className="TaskDeleteMod_Button"
         onClick={() => {
           setIsDelete(false);
-          parent.query();
+          parent.deleteTask();
         }}
       >
         Yes
@@ -72,21 +74,61 @@ export class TaskDeleteMod extends Modifier {
     return Boolean(this.dialogWrapper?.querySelector(".TaskDeleteMod_Button"));
   }
 
-  getTaskName() {
-    const el = this.dialogWrapper?.querySelector(".task--name");
-    return el?.textContent?.trim();
+  getTaskNameEl() {
+    return this.dialogWrapper?.querySelector(".task--name") as HTMLSpanElement;
   }
 
-  getPipelineName() {
+  getLidName() {
     const el = this.dialogWrapper?.querySelector(".task--tasked>a");
     return el?.textContent?.trim();
   }
 
-  query() {
+  getCopyTaskLinkButtonEl() {
+    const el = this.dialogWrapper?.querySelector(
+      ".task-header--right .el-button:has(.key-icon--link)"
+    );
+    return el;
+  }
+
+  async getTaskLink() {
+    const copyButton = this.getCopyTaskLinkButtonEl() as HTMLButtonElement;
+    copyButton?.click();
+    await sleep(100);
+    try {
+      const text = await navigator.clipboard.readText();
+      return { text };
+    } catch (error) {
+      return { error };
+    }
+  }
+
+  async deleteTask() {
     this.getDialogWrapper();
-    console.log("Do Query!");
-    console.log(this.getTaskName());
-    console.log(this.getPipelineName());
+
+    const taskLink = await this.getTaskLink();
+    if (taskLink.error) {
+      console.error("Failed to read clipboard:", taskLink.error);
+      return;
+    }
+    if (taskLink.text?.indexOf("https") !== 0) {
+      console.error("Wrong url format");
+      return;
+    }
+
+    const taskNumber = Api.getTaskNumberFromUrl(taskLink.text);
+    if (taskNumber.error) {
+      console.error("Failed to read clipboard:", taskLink.error);
+      return;
+    }
+
+    const res = await Api.fetch(Api.getTaskUrl(taskNumber.result), "DELETE");
+    if (res.error) {
+      console.error("Failed to fetch:", res.error);
+      return;
+    }
+
+    this.getTaskNameEl().innerText =
+      this.getTaskNameEl()?.innerText + " (DELETED)";
   }
 
   addButton() {
